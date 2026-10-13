@@ -460,8 +460,15 @@ status_t VintfObject::fetchDeviceMatrix(CompatibilityMatrix* out, std::string* e
 status_t VintfObject::fetchUnfilteredFrameworkHalManifest(HalManifest* out, std::string* error) {
     auto systemEtcStatus = fetchOneHalManifest(kSystemManifest, out, error);
     if (systemEtcStatus == OK) {
+        // Recovery installs its HAL fragments under /system, including
+        // device-type fragments. Treat them as recovery framework services.
+#if defined(__ANDROID_RECOVERY__)
+        constexpr bool forceSchemaType = true;
+#else
+        constexpr bool forceSchemaType = false;
+#endif
         auto dirStatus = addDirectoryManifests(kSystemManifestFragmentDir, out,
-                                               false /* forceSchemaType */, error);
+                                               forceSchemaType, error);
         if (dirStatus != OK) {
             return dirStatus;
         }
